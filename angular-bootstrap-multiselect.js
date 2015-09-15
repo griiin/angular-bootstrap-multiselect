@@ -3,8 +3,7 @@
 angular.module("ui.multiselect", ["multiselect.tpl.html"])
 	//from bootstrap-ui typeahead parser
 	.factory("optionParser", ["$parse", function($parse) {
-		//                      00000111000000000000022200000000000000003333333333333330000000000044000
-		var TYPEAHEAD_REGEXP = /^\s*(.*?)(?:\s+as\s+(.*?))?\s+for\s+(?:([\$\w][\$\w\d]*))\s+in\s+(.*)$/;
+		var TYPEAHEAD_REGEXP = /^\s*([\s\S]+?)(?:\s+as\s+([\s\S]+?))?\s+for\s+(?:([\$\w][\$\w\d]*))\s+in\s+([\s\S]+?)$/;
 
 		return {
 			parse: function(input) {
@@ -28,7 +27,6 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 			restrict: "E",
 			require : "ngModel",
 			link    : function(originalScope, element, attrs, modelCtrl) {
-
 				var exp = attrs.options;
 				var parsedResult = optionParser.parse(exp);
 				var isMultiple = attrs.multiple ? true : false;
@@ -38,7 +36,6 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 				var scope = originalScope.$new();
 				scope.filterAfterRows = attrs.filterAfterRows;
 				var changeHandler = attrs.change || angular.noop;
-
 				scope.items = [];
 				scope.header = "Select";
 				scope.multiple = isMultiple;
@@ -112,7 +109,7 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 						local[parsedResult.itemName] = model[i];
 						scope.items.push({
 							label  : parsedResult.viewMapper(local),
-							model  : model[i],
+                			model  : parsedResult.modelMapper(local),
 							checked: false
 						});
 					}
@@ -138,7 +135,16 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 					} else {
 						var local = {};
 						local[parsedResult.itemName] = modelCtrl.$modelValue;
-						scope.header = parsedResult.viewMapper(local);
+						var header = parsedResult.viewMapper(local);
+						if (!header) {
+							for (var i in scope.items) {
+								var item = scope.items[i];
+								if (item.model === modelCtrl.$modelValue) {
+									header = item.label;
+								}
+							}
+						}
+						scope.header = header;
 					}
 				}
 
